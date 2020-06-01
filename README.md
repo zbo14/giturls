@@ -4,7 +4,7 @@ A command-line tool that searches GitHub for URLs belonging to a domain
 
 ## Install
 
-`$ npm i giturls`
+`$ npm i @zbo14/giturls`
 
 ## Usage
 

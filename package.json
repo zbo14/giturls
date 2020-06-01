@@ -1,5 +1,5 @@
 {
-  "name": "giturls",
+  "name": "@zbo14/giturls",
   "version": "0.0.0",
   "description": "A command-line tool that searches GitHub for URLs belonging to a domain",
   "bin": "index.js",
