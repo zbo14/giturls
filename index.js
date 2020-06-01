@@ -31,18 +31,22 @@ const matchAll = (regex, string) => {
   return matches
 }
 
-const getNumPages = async (domain, page) => {
-  await goto(page, `https://github.com/search?q=${domain}&type=Code`)
+const getNumPages = async (query, page) => {
+  const q = encodeURIComponent(query)
+
+  await goto(page, `https://github.com/search?q=${q}&type=Code`)
 
   const promise = page.$$eval('div.pagination > a', anchors => {
     return anchors.map(a => (a.getAttribute('aria-label') || '').split(' ').pop())
   })
 
-  return Math.max(...await promise)
+  return Math.max(1, ...await promise)
 }
 
-const gotoPage = async (domain, page, pageNum) => {
-  await goto(page, `https://github.com/search?p=${pageNum}&q=${domain}&type=Code`)
+const gotoPage = async (query, page, pageNum) => {
+  const q = encodeURIComponent(query)
+
+  await goto(page, `https://github.com/search?p=${pageNum}&q=${q}&type=Code`)
 
   let hrefs = await page.$$eval('div.f4 > a', anchors => {
     return anchors.map(a => {
@@ -91,7 +95,7 @@ const gotoPage = async (domain, page, pageNum) => {
     matches.forEach(([url]) => {
       try {
         url = new URL(url)
-        url.hostname.endsWith(domain) && console.log(url.href)
+        url.href.includes(query) && console.log(url.href)
       } catch {}
     })
   }
@@ -99,11 +103,11 @@ const gotoPage = async (domain, page, pageNum) => {
 
 program
   .version('0.0.0')
-  .arguments('<domain>')
+  .arguments('<query>')
   .option('-c, --cookie <string>', 'cookie for your GitHub account')
   .option('-q, --quiet', 'don\'t show banner and info')
   .option('-w, --window', 'open the browser window')
-  .action(async (domain, opts) => {
+  .action(async (query, opts) => {
     const cookies = (opts.cookie || '')
       .split(';')
       .map(cookie => {
@@ -119,19 +123,26 @@ program
     const browser = await puppeteer.launch({ headless: !opts.window })
     const page = await browser.newPage()
 
-    if (!opts.quiet) {
-      warn('[-] Searching GitHub...')
-      warn('[-] Target domain: ' + domain)
-    }
+    page.once('close', async () => {
+      if (!opts.quiet) {
+        warn('[-] Page closed')
+        warn('[-] Exiting')
+      }
+
+      await browser.close()
+      process.exit()
+    })
+
+    opts.quiet || warn('[-] Searching GitHub: ' + query)
 
     await goto(page, 'https://github.com')
     await page.setCookie(...cookies)
-    const numPages = await getNumPages(domain, page)
+    const numPages = await getNumPages(query, page)
 
     let bar
 
-    if (!opts.quiet) {
-      warn(`[-] Found ${numPages} pages of search results`, opts)
+    if (!opts.quiet && numPages > 1) {
+      warn(`[-] Found ${numPages} pages of results`)
 
       bar = new ProgressBar('[:bar] :percent', {
         complete: '=',
@@ -142,13 +153,13 @@ program
     }
 
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      await gotoPage(domain, page, pageNum)
-      opts.quiet || bar.tick()
+      await gotoPage(query, page, pageNum)
+      !opts.quiet && bar && bar.tick()
     }
 
-    opts.quiet || warn('[-] Done!')
-
     await browser.close()
+
+    opts.quiet || warn('[-] Done!')
   })
   .parseAsync(process.argv)
   .catch(err => error(err) || 1)

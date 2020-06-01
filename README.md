@@ -1,6 +1,6 @@
 # giturls
 
-A command-line tool that searches GitHub for URLs belonging to a domain
+A command-line tool that searches GitHub for URLs
 
 ## Install
 
@@ -9,7 +9,7 @@ A command-line tool that searches GitHub for URLs belonging to a domain
 ## Usage
 
 ```
-Usage: giturls [options] <domain>
+Usage: giturls [options] <query>
 
 Options:
   -V, --version          output the version number
