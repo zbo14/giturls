@@ -18,3 +18,9 @@ Options:
   -w, --window           open the browser window
   -h, --help             display help for command
 ```
+
+**Note:** `giturls` might output the same URL multiple times.
+
+To process unique URLs, you can pipe `giturls` to `sort`:
+
+`$ giturls -c <cookie> <query> | sort -u > unique-urls.txt`

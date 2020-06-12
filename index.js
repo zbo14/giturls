@@ -88,7 +88,7 @@ const gotoPage = async (query, page, pageNum) => {
       continue
     }
 
-    const regex = /https?:\/\/[^\s,'"]+/g
+    const regex = /https?:\/\/[^\s,'"|()<>[\]{}]+/g
     const string = await page.$eval('pre', pre => pre.textContent)
     const matches = matchAll(regex, string)
 
